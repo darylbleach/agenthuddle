@@ -1,0 +1,15 @@
+{
+  "name": "agenthuddle-relay",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-20",
+  "durable_objects": { "bindings": [{ "name": "ACCOUNT", "class_name": "Account" }, { "name": "LIMIT", "class_name": "Limiter" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Account", "Limiter"] }],
+  // Confirmation and password-reset emails (Cloudflare Email Service; agenthuddle.net is onboarded for sending).
+  "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@agenthuddle.net"] }],
+  // Web Push: the public half of the VAPID key. The private half is the VAPID_PRIVATE secret.
+  "vars": {
+    "VAPID_PUBLIC": "BGN8Yvosdt9_jr8vuEa1bPHGOEpCCYPc96aJOK7-uWUGaR-mwXseiN9gO0W3IDUd7q5-VtuQJyLJjolPq_87emI",
+    "VAPID_SUBJECT": "https://app.agenthuddle.net"
+  },
+  "observability": { "enabled": true }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "agent-huddle",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "set-password": "wrangler secret put APP_PASSWORD",
+    "mac-server": "node local/start.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  },
+  "optionalDependencies": {
+    "better-sqlite3-multiple-ciphers": "^13.0.3",
+    "ws": "^8.22.0"
+  }
+}

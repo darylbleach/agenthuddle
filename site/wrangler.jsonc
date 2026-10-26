@@ -1,0 +1,9 @@
+{
+  // Not deployed yet: see README.md.
+  "name": "agenthuddle-site",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-20",
+  "d1_databases": [{ "binding": "WAITLIST", "database_name": "agenthuddle-site", "database_id": "REPLACE_WITH_D1_ID" }],
+  "send_email": [{ "name": "EMAIL", "allowed_sender_addresses": ["hello@agenthuddle.net"] }],
+  "vars": { "LAUNCHED": "0", "CHECKOUT_URL": "", "FOUNDING_URL": "" }
+}

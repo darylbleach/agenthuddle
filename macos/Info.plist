@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key><string>Agent Huddle</string>
+  <key>CFBundleDisplayName</key><string>Agent Huddle</string>
+  <key>CFBundleIdentifier</key><string>net.agenthuddle.mac</string>
+  <key>CFBundleExecutable</key><string>AgentHuddle</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>__VERSION__</string>
+  <key>CFBundleVersion</key><string>__BUILD__</string>
+  <key>LSMinimumSystemVersion</key><string>12.0</string>
+  <key>LSApplicationCategoryType</key><string>public.app-category.productivity</string>
+  <key>NSHighResolutionCapable</key><true/>
+  <key>NSPrincipalClass</key><string>NSApplication</string>
+  <key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
+  <key>NSHumanReadableCopyright</key><string>Agent Huddle</string>
+  <!-- Sparkle auto-updates. build.sh fills in the version and the public half of your update-signing key. -->
+  <key>SUFeedURL</key><string>https://updates.agenthuddle.net/appcast.xml</string>
+  <key>SUPublicEDKey</key><string>__SPARKLE_PUBLIC_KEY__</string>
+  <key>SUEnableAutomaticChecks</key><true/>
+  <key>SUScheduledCheckInterval</key><integer>86400</integer>
+  <key>SUAllowsAutomaticUpdates</key><true/>
+</dict>
+</plist>

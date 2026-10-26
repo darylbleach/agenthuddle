@@ -1,0 +1,6 @@
+node_modules/
+.wrangler/
+.dev.vars
+macos/build/
+src/.index.node.js
+macos/releases/

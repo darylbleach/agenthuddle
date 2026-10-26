@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#191918" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Agent Huddle">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/icons/favicon-64.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<title>Agent Huddle</title>
+<style>
+:root{--bg:#f6f5f2;--panel:#fff;--text:#1f1e1c;--muted:#6b6862;--line:#e2dfd8;--accent:#2f6fde;--ink:#fff;--danger:#c2410c;--ok:#15803d;--warn:#b45309}
+@media (prefers-color-scheme:dark){:root{--bg:#191918;--panel:#212120;--text:#ecebe8;--muted:#9b988f;--line:#33322f;--accent:#6ea0ff;--ink:#0d1220;--danger:#fb923c;--ok:#4ade80;--warn:#fbbf24}}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif}
+#screen{min-height:100%;display:grid;place-items:center;padding:24px 16px calc(24px + env(safe-area-inset-bottom))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;width:100%;max-width:400px}
+h1{font-size:20px;margin:0 0 4px}
+h2{font-size:16px;margin:0 0 8px}
+p{color:var(--muted);margin:0 0 14px;font-size:14px}
+label{display:block;font-size:13px;font-weight:600;margin:12px 0 6px}
+input{width:100%;font:inherit;font-size:16px;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+input:focus{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);border-color:var(--accent)}
+button{font:inherit;font-weight:600;border:1px solid var(--line);border-radius:9px;padding:9px 14px;background:transparent;color:inherit;cursor:pointer}
+button.primary{background:var(--accent);color:var(--ink);border-color:var(--accent);width:100%;margin-top:16px;padding:11px}
+button.link{border:0;padding:0;color:var(--accent);font-weight:500;background:none}
+button.danger{color:var(--danger)}
+.err{color:var(--danger);font-size:13px;margin-top:10px;min-height:1em}
+.mac{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.mac:last-child{border-bottom:0}
+.mac .nm{font-weight:600}
+.mac .st{font-size:12.5px;color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
+.dot.on{background:var(--ok)}
+.grow{flex:1;min-width:0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-size:13px;color:var(--muted)}
+.spin{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;display:inline-block;animation:sp .8s linear infinite;vertical-align:-3px;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ok{color:var(--ok);font-size:13px;margin-top:10px}
+.toggle{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px}
+.toggle .grow{color:var(--muted)}
+.note{font-size:13px;color:var(--muted);background:var(--bg);border-radius:9px;padding:10px 12px;margin-top:12px}
+#app{position:fixed;inset:0;width:100%;height:100%;border:0;background:var(--bg)}
+#banner{position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top));background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;z-index:10;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+</style>
+</head>
+<body>
+<div id="screen"></div>
+<div id="banner" hidden></div>
+<iframe id="app" hidden title="Agent Huddle"></iframe>
+<script>
+/*TUNNEL*/
+
+// ---------- helpers ----------
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+async function api(path, body, method) {
+  const r = await fetch('/api/' + path, { method: method || (body ? 'POST' : 'GET'), headers: { 'content-type': 'application/json', 'x-ah': '1' }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(j.error || r.statusText), { status: r.status, data: j });
+  return j;
+}
+const ago = (t) => { if (!t) return 'never'; const s = (Date.now() - t) / 1000; return s < 90 ? 'just now' : s < 5400 ? `${Math.round(s / 60)} min ago` : s < 129600 ? `${Math.round(s / 3600)} h ago` : `${Math.round(s / 86400)} days ago`; };
+function deviceName() {
+  const ua = navigator.userAgent;
+  return /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android phone' : /Mac OS X/.test(ua) ? 'Mac browser' : /Windows/.test(ua) ? 'Windows browser' : 'Browser';
+}
+
+// ---------- this device's pairings (IndexedDB; the private key can't be read out) ----------
+function idb() {
+  return new Promise((res, rej) => { const r = indexedDB.open('agenthuddle', 1); r.onupgradeneeded = () => r.result.createObjectStore('pairs', { keyPath: 'macId' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+}
+async function store(mode, fn) { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction('pairs', mode); const r = fn(tx.objectStore('pairs')); tx.oncomplete = () => res(r?.result); tx.onerror = () => rej(tx.error); }); }
+const getPair = (id) => store('readonly', (s) => s.get(id));
+const putPair = (rec) => store('readwrite', (s) => s.put(rec));
+const delPair = (id) => store('readwrite', (s) => s.delete(id));
+
+// ---------- the encrypted session with one Mac ----------
+class Session {
+  constructor(macId, rec) { this.macId = macId; this.rec = rec; this.id = 0; this.pending = new Map(); this.sockets = new Map(); this.closed = false; }
+  /** Connects and does the handshake (or pairing). Resolves when the channel is ready. */
+  open(pair) {
+    return new Promise((resolve, reject) => {
+      const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/link/phone?mac=${encodeURIComponent(this.macId)}`);
+      this.ws = ws; this.chan = null;
+      const nP = randomB64u(16);
+      let settled = false;
+      const done = (e) => { if (settled) return; settled = true; e ? reject(e) : resolve(); };
+      const timer = setTimeout(() => { done(new Error('timeout')); try { ws.close(); } catch {} }, 20000);
+      ws.onopen = async () => {
+        if (pair) ws.send(JSON.stringify({ t: 'pair', pub: this.rec.pub, n: nP, name: pair.name, proof: await pairProof(pair.secret, this.macId, this.rec.pub, pair.name) }));
+        else ws.send(JSON.stringify({ t: 'hello', pub: this.rec.pub, n: nP, v: 1 }));
+      };
+      ws.onmessage = async (ev) => {
+        let f; try { f = JSON.parse(ev.data); } catch { return; }
+        if (f.relay === 'offline') { clearTimeout(timer); done(new Error('offline')); return; }
+        if (!this.chan) {
+          if (f.t === 'err') { clearTimeout(timer); done(new Error(f.e || 'refused')); return; }
+          if (f.t === 'hello-ok') {
+            const keys = await sessionKeys(this.rec.priv, this.rec.macPub, nP, f.n, 'phone');
+            this.chan = new Channel(keys, (s) => { try { ws.send(s); } catch {} });
+            clearTimeout(timer); done();
+          }
+          return;
+        }
+        try { const msg = await this.chan.receive(f); if (msg) this.dispatch(msg); }
+        catch { try { ws.close(4005, 'bad frame'); } catch {} }
+      };
+      ws.onclose = (ev) => {
+        clearTimeout(timer); done(new Error(ev.code === 4002 ? 'offline' : 'closed'));
+        for (const p of this.pending.values()) p.reject(new Error('Disconnected from your Mac'));
+        this.pending.clear();
+        for (const s of this.sockets.values()) s._closed(1006);
+        this.sockets.clear();
+        if (!this.closed) this.onDrop?.(ev.code);
+      };
+    });
+  }
+  close() { this.closed = true; try { this.ws?.close(); } catch {} }
+  dispatch(m) {
+    if (m.k === 'res') {
+      const p = this.pending.get(m.id); if (!p) return; this.pending.delete(m.id);
+      p.resolve(new Response(m.s === 204 || !m.b ? null : unb64u(m.b), { status: m.s, headers: m.h || {} }));
+    } else if (m.k === 'ws-open-ok') this.sockets.get(m.id)?._opened();
+    else if (m.k === 'ws-msg') this.sockets.get(m.id)?._message(m.d);
+    else if (m.k === 'ws-closed') { const s = this.sockets.get(m.id); this.sockets.delete(m.id); s?._closed(m.code); }
+  }
+  async fetch(path, init = {}) {
+    if (!this.chan) throw new Error('Not connected to your Mac');
+    const id = ++this.id;
+    const h = {}; new Headers(init.headers || {}).forEach((v, k) => { h[k] = v; });
+    let b = null;
+    if (init.body != null) b = b64u(typeof init.body === 'string' ? new TextEncoder().encode(init.body) : new Uint8Array(await new Response(init.body).arrayBuffer()));
+    return new Promise((resolve, reject) => {
+      this.pending.set(id, { resolve, reject });
+      setTimeout(() => { if (this.pending.delete(id)) reject(new Error('Your Mac took too long to answer')); }, 120000);
+      this.chan.send({ k: 'req', id, m: init.method || 'GET', p: path, h, b });
+    });
+  }
+  socket(path) {
+    const id = ++this.id, s = this;
+    const sock = {
+      readyState: 0, onopen: null, onmessage: null, onclose: null, onerror: null,
+      send(d) { if (sock.readyState === 1) s.chan.send({ k: 'ws-send', id, d: String(d) }); },
+      close() { if (sock.readyState > 1) return; s.chan?.send({ k: 'ws-close', id }); s.sockets.delete(id); sock._closed(1000); },
+      _opened() { sock.readyState = 1; sock.onopen?.({}); },
+      _message(d) { sock.onmessage?.({ data: d }); },
+      _closed(code) { if (sock.readyState === 3) return; sock.readyState = 3; sock.onclose?.({ code: code || 1006 }); },
+    };
+    if (!this.chan) { setTimeout(() => sock._closed(1006), 0); return sock; }
+    this.sockets.set(id, sock);
+    this.chan.send({ k: 'ws-open', id, p: path });
+    return sock;
+  }
+}
+
+// ---------- the window.AH bridge the Mac's page uses inside the frame ----------
+let session = null, current = null, reconnecting = false;
+const blobs = new Map();
+window.AH = {
+  initialRoom: null,
+  get local() { return false; },
+  fetch: async (path, init) => { await ready(); return session.fetch(path, init); },
+  socket: (path) => (session?.chan ? session.socket(path) : (() => { const s = { readyState: 3, send() {}, close() {} }; setTimeout(() => s.onclose?.({ code: 1006 }), 1500); return s; })()),
+  async blobURL(path) {
+    if (blobs.has(path)) return blobs.get(path);
+    const r = await window.AH.fetch(path); const u = URL.createObjectURL(await r.blob()); blobs.set(path, u); return u;
+  },
+  signedOut() { leaveApp(); },
+  back() { leaveApp(); },
+};
+async function ready() {
+  for (let i = 0; i < 60 && !(session && session.chan); i++) await new Promise((r) => setTimeout(r, 500));
+  if (!(session && session.chan)) throw new Error('Not connected to your Mac');
+}
+function banner(text) { const b = $('#banner'); b.hidden = !text; b.textContent = text || ''; }
+
+async function openMac(mac, pair, room) {
+  const rec = await getPair(mac.id);
+  if (!rec) return showNeedsPair(mac);
+  current = mac;
+  window.AH.initialRoom = room || null;
+  show(`<div class="card"><p><span class="spin"></span>Connecting to ${esc(mac.name)}…</p></div>`);
+  session?.close();
+  session = new Session(mac.id, rec);
+  session.onDrop = () => reconnect();
+  try { await session.open(pair); }
+  catch (e) {
+    session = null;
+    if (e.message === 'offline') return showOffline(mac);
+    if (e.message === 'not-paired') { await delPair(mac.id); return showNeedsPair(mac, 'This device was removed on your Mac. Pair it again.'); }
+    if (e.message === 'pair-expired' || e.message === 'pair-bad') { await delPair(mac.id); return showNeedsPair(mac, 'That pairing code has expired or was already used. Make a new one on your Mac.'); }
+    return showError(`Couldn’t connect to ${mac.name}: ${e.message}`, () => openMac(mac));
+  }
+  // Load the Mac's own page into the frame; it talks to the Mac through window.AH.
+  try {
+    const html = await (await session.fetch('/')).text();
+    const frame = $('#app');
+    frame.srcdoc = html.replace(/<head>/i, '<head><script>window.AH = parent.AH;<\/script>');
+    frame.hidden = false; $('#screen').hidden = true;
+  } catch (e) { showError(e.message, () => openMac(mac)); }
+}
+async function reconnect() {
+  if (reconnecting || !current) return; reconnecting = true;
+  banner('Reconnecting to your Mac…');
+  for (let i = 0; current; i++) {
+    await new Promise((r) => setTimeout(r, Math.min(15000, 1000 * 2 ** Math.min(i, 4))));
+    if (!current) break;
+    const rec = await getPair(current.id); if (!rec) break;
+    const s = new Session(current.id, rec);
+    s.onDrop = () => reconnect();
+    try { await s.open(); session = s; banner(''); break; }
+    catch (e) {
+      if (e.message === 'not-paired') { // removed on the Mac
+        const mac = current; await delPair(mac.id); reconnecting = false; leaveApp(true);
+        return showNeedsPair(mac, 'This device was removed on your Mac. Pair it again to reconnect.');
+      }
+      banner(e.message === 'offline' ? 'Your Mac is offline. Waiting for it…' : 'Reconnecting to your Mac…');
+    }
+  }
+  reconnecting = false;
+}
+function leaveApp(quiet) { current = null; session?.close(); session = null; banner(''); $('#app').hidden = true; $('#app').srcdoc = ''; $('#screen').hidden = false; if (!quiet) showMacs(); }
+
+// ---------- screens ----------
+function show(html) { $('#app').hidden = true; $('#screen').hidden = false; $('#screen').innerHTML = html; }
+function showSignIn(note, startCreate) {
+  let create = !!startCreate;
+  const draw = () => {
+    show(`<form class="card" id="f">
+      <img src="/icons/icon-192.png" alt="" width="52" height="52" style="border-radius:13px;display:block;margin-bottom:10px">
+      <h1>Agent Huddle</h1>
+      <p>${note ? esc(note) : create ? 'Create an account to reach the agents on your Mac from this device.' : 'Sign in to reach the agents on your Mac.'}</p>
+      <label for="em">Email</label><input id="em" type="email" autocomplete="email" required>
+      <label for="pw">Password</label><input id="pw" type="password" autocomplete="${create ? 'new-password' : 'current-password'}" minlength="${create ? 10 : 1}" required>
+      ${create ? '<p style="margin:6px 0 0;font-size:12.5px">At least 10 characters. We’ll email you a link to confirm your address.</p>' : ''}
+      <button class="primary">${create ? 'Create account' : 'Sign in'}</button>
+      <div class="err" id="err"></div>
+      <div class="foot"><button type="button" class="link" id="sw">${create ? 'I already have an account' : 'Create an account'}</button>${create ? '<a href="/privacy.html" target="_blank" style="color:var(--muted)">Privacy</a>' : '<button type="button" class="link" id="forgot">Forgot password?</button>'}</div>
+    </form>`);
+    $('#sw').onclick = () => { create = !create; draw(); };
+    const fg = $('#forgot'); if (fg) fg.onclick = () => showForgot($('#em').value);
+    $('#f').onsubmit = async (e) => {
+      e.preventDefault(); $('#err').textContent = '';
+      const email = $('#em').value.trim(), password = $('#pw').value;
+      try {
+        const r = await api(create ? 'signup' : 'login', { email, password });
+        if (r.unverified) return showCheckEmail(r.email || email, password);
+        route();
+      } catch (err) {
+        if (err.data?.unverified) return showCheckEmail(err.data.email || email, password);
+        $('#err').textContent = err.message;
+      }
+    };
+    $('#em').focus();
+  };
+  draw();
+}
+function showCheckEmail(email, password) {
+  show(`<div class="card"><h1>Check your email</h1>
+    <p>We’ve sent a link to <b>${esc(email)}</b>. Open it on this device to confirm your address and sign in. It can take a minute; check your spam folder too.</p>
+    <button class="primary" id="resend">Send the link again</button><div class="ok" id="ok"></div><div class="err" id="err"></div>
+    <div class="foot"><button class="link" id="back">Back to sign in</button></div></div>`);
+  $('#back').onclick = () => showSignIn();
+  $('#resend').onclick = async () => {
+    $('#ok').textContent = ''; $('#err').textContent = '';
+    try { const r = await api('resend', { email, password }); if (r.verified) return route(); }
+    catch (err) { if (!err.data?.unverified) { $('#err').textContent = err.message; return; } }
+    $('#ok').textContent = 'Sent. Use the newest email.';
+  };
+}
+function showForgot(email) {
+  show(`<form class="card" id="f"><h1>Reset your password</h1>
+    <p>Enter your account’s email and we’ll send you a link to choose a new password.</p>
+    <label for="em">Email</label><input id="em" type="email" autocomplete="email" required value="${esc(email || '')}">
+    <button class="primary">Send link</button><div class="err" id="err"></div>
+    <div class="foot"><button type="button" class="link" id="back">Back to sign in</button></div></form>`);
+  $('#back').onclick = () => showSignIn();
+  $('#f').onsubmit = async (e) => {
+    e.preventDefault(); $('#err').textContent = '';
+    try { await api('reset-request', { email: $('#em').value.trim() }); }
+    catch (err) { $('#err').textContent = err.message; return; }
+    show(`<div class="card"><h1>Check your email</h1><p>If there’s an account for that address, we’ve sent a link to reset the password. It works for 30 minutes.</p>
+      <div class="foot"><button class="link" id="back">Back to sign in</button></div></div>`);
+    $('#back').onclick = () => showSignIn();
+  };
+}
+function showReset(account, token) {
+  show(`<form class="card" id="f"><h1>Choose a new password</h1>
+    <p>Other devices will be signed out. Your Macs stay linked.</p>
+    <label for="pw">New password</label><input id="pw" type="password" autocomplete="new-password" minlength="10" required>
+    <button class="primary">Save password</button><div class="err" id="err"></div></form>`);
+  $('#f').onsubmit = async (e) => {
+    e.preventDefault(); $('#err').textContent = '';
+    try { await api('reset', { account, token, password: $('#pw').value }); showMacs('Password changed.'); }
+    catch (err) { $('#err').textContent = err.message; }
+  };
+}
+async function verifyFlow(account, token) {
+  show(`<div class="card"><p><span class="spin"></span>Confirming your email…</p></div>`);
+  try { await api('verify', { account, token }); showMacs('Email confirmed. You’re signed in.'); }
+  catch (err) { showSignIn(err.message); }
+}
+
+// ---------- notifications on this device ----------
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+async function allPairs() { return (await store('readonly', (s) => s.getAll())) || []; }
+async function pushSub() { if (!pushSupported()) return null; const reg = await navigator.serviceWorker.getRegistration('/'); return reg ? reg.pushManager.getSubscription() : null; }
+async function syncPush(sub) {
+  const pairs = await Promise.all((await allPairs()).map(async (r) => ({ mac: r.macId, tag: await phoneTag(r.pub) })));
+  await api('push/subscribe', { sub: sub.toJSON(), pairs });
+}
+async function enablePush() {
+  if (!pushSupported()) throw new Error(isIOS() && !standalone() ? 'On iPhone and iPad, add Agent Huddle to your Home Screen first (Share → Add to Home Screen), then open it from there.' : 'This browser can’t show notifications.');
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') throw new Error('Notifications are blocked. Allow them for this site in your settings, then try again.');
+  const { key } = await api('push/key');
+  if (!key) throw new Error('Notifications aren’t set up on the relay yet.');
+  const reg = await navigator.serviceWorker.register('/sw.js');
+  await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: unb64u(key) });
+  await syncPush(sub);
+}
+async function disablePush() {
+  const sub = await pushSub(); if (!sub) return;
+  await api('push/unsubscribe', { endpoint: sub.endpoint }).catch(() => {});
+  await sub.unsubscribe().catch(() => {});
+}
+async function pushToggleHTML() {
+  if (!pushSupported() && !(isIOS() && !standalone())) return '';
+  const on = !!(await pushSub().catch(() => null)) && Notification.permission === 'granted';
+  return `<div class="toggle"><div class="grow"><b style="color:var(--text)">Notifications</b><br>${on ? 'On for this device: approvals and replies from your Macs.' : 'Get a notification when an agent needs your approval.'}</div>
+    <button id="push">${on ? 'Turn off' : 'Turn on'}</button></div><div class="err" id="pusherr"></div>`;
+}
+
+async function showMacs(note) {
+  let me; try { me = await api('me'); } catch (e) { if (e.status === 401) return showSignIn(); return showError(e.message, showMacs); }
+  const rows = await Promise.all(me.macs.map(async (m) => ({ ...m, paired: !!(await getPair(m.id)) })));
+  const pushHTML = rows.some((m) => m.paired) ? await pushToggleHTML() : '';
+  show(`<div class="card">
+    <h1>Your Macs</h1>
+    <p>Signed in as ${esc(me.email)}</p>${typeof note === 'string' && note ? `<div class="ok" style="margin:-6px 0 8px">${esc(note)}</div>` : ''}
+    ${rows.length ? rows.map((m) => `<div class="mac"><span class="dot ${m.online ? 'on' : ''}"></span><div class="grow"><div class="nm">${esc(m.name)}</div>
+      <div class="st">${m.online ? 'Online' : `Offline · last seen ${ago(m.lastSeen)}`}${m.paired ? '' : ' · not paired with this device'}</div></div>
+      <button data-open="${esc(m.id)}">${m.paired ? 'Open' : 'Pair'}</button></div>`).join('')
+      : `<div class="note">No Macs yet. In the Agent Huddle app on your Mac, open <b>Accounts → Phone</b> and sign in with this account.</div>`}
+    ${pushHTML}
+    <div class="foot"><button class="link" id="out">Sign out</button><span><button class="link" id="manage">Manage</button></span></div>
+  </div>`);
+  const pb = $('#push');
+  if (pb) pb.onclick = async () => {
+    pb.disabled = true; $('#pusherr').textContent = '';
+    try { if (pb.textContent === 'Turn on') await enablePush(); else await disablePush(); showMacs(); }
+    catch (e) { $('#pusherr').textContent = e.message; pb.disabled = false; }
+  };
+  // Keep the relay's list of this device's Macs current (a Mac paired since notifications were turned on).
+  pushSub().then((sub) => sub && Notification.permission === 'granted' && syncPush(sub)).catch(() => {});
+  document.querySelectorAll('[data-open]').forEach((b) => (b.onclick = () => openMac(rows.find((m) => m.id === b.dataset.open))));
+  $('#out').onclick = async () => { await disablePush().catch(() => {}); await api('logout', {}).catch(() => {}); showSignIn(); };
+  const mg = $('#manage'); if (mg) mg.onclick = () => showManage(rows);
+}
+function showManage(rows) {
+  show(`<div class="card"><h1>Manage Macs</h1><p>Removing a Mac signs it out of your account. Forgetting only removes the pairing from this device.</p>
+    ${rows.map((m) => `<div class="mac"><div class="grow"><div class="nm">${esc(m.name)}</div></div>
+      ${m.paired ? `<button data-forget="${esc(m.id)}">Forget here</button>` : ''}<button class="danger" data-remove="${esc(m.id)}">Remove</button></div>`).join('')}
+    <div class="foot"><button class="link" id="back">Back</button><button class="link danger" id="del">Delete account</button></div></div>`);
+  $('#back').onclick = showMacs;
+  $('#del').onclick = showDeleteAccount;
+  document.querySelectorAll('[data-forget]').forEach((b) => (b.onclick = async () => { await delPair(b.dataset.forget); showMacs(); }));
+  document.querySelectorAll('[data-remove]').forEach((b) => (b.onclick = async () => {
+    if (!confirm('Remove this Mac from your account? You’ll need to sign in on the Mac again to reconnect it.')) return;
+    await api('macs/' + encodeURIComponent(b.dataset.remove), {}, 'DELETE').catch((e) => alert(e.message)); await delPair(b.dataset.remove); showMacs();
+  }));
+}
+function showDeleteAccount() {
+  show(`<div class="card"><h1>Delete account</h1>
+    <p>This deletes your Agent Huddle account from the relay: your email, password and the list of Macs. Your Macs are signed out and phones can't reach them until you sign in again. Your chats stay on your Mac.</p>
+    <form id="f"><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" required>
+    <p class="err" id="err"></p><button class="danger" type="submit">Delete my account</button></form>
+    <div class="foot"><button class="link" id="back">Back</button></div></div>`);
+  $('#back').onclick = showMacs;
+  $('#f').onsubmit = async (e) => {
+    e.preventDefault();
+    try { await api('delete-account', { password: $('#pw').value }); } catch (er) { $('#err').textContent = er.message; return; }
+    try { const db = await idb(); db.transaction('pairs', 'readwrite').objectStore('pairs').clear(); } catch {}
+    showSignIn();
+  };
+}
+function showNeedsPair(mac, note) {
+  show(`<div class="card"><h1>Pair this device</h1>
+    <p>${note ? esc(note) + ' ' : ''}For your security, each phone or browser is paired with ${esc(mac.name)} once, so only your devices can read your chats.</p>
+    <div class="note">On your Mac, open <b>Agent Huddle → Accounts → Phone → Pair a phone</b>, then scan the QR code with this device's camera (or open the link it shows).</div>
+    <div class="foot"><button class="link" id="back">Back</button></div></div>`);
+  $('#back').onclick = showMacs;
+}
+function showOffline(mac) {
+  show(`<div class="card"><h1>${esc(mac.name)} is offline</h1>
+    <p>Your agents run on your Mac, so it needs to be awake with Agent Huddle open. Turn on <b>Keep Mac Awake While Plugged In</b> in the Mac app to avoid this.</p>
+    <button class="primary" id="retry">Try again</button><div class="foot"><button class="link" id="back">Back</button></div></div>`);
+  $('#retry').onclick = () => openMac(mac); $('#back').onclick = showMacs;
+}
+function showError(msg, retry) {
+  show(`<div class="card"><h1>Something went wrong</h1><p>${esc(msg)}</p><button class="primary" id="retry">Try again</button><div class="foot"><button class="link" id="back">Back</button></div></div>`);
+  $('#retry').onclick = retry; $('#back').onclick = showMacs;
+}
+
+// ---------- pairing from the Mac's QR code: /#pair=<macId>.<secret>.<macPub> ----------
+async function pairFlow(hash) {
+  const [macId, secret, macPub] = hash.split('.');
+  let me; try { me = await api('me'); } catch (e) {
+    sessionStorage.setItem('ah-pair', hash);
+    return showSignIn('Sign in with the same account as your Mac to pair this device.');
+  }
+  const mac = me.macs.find((m) => m.id === macId);
+  if (!mac) return showError('That Mac isn’t on this account. Sign in with the account you used on the Mac.', () => { api('logout', {}).then(() => showSignIn()); });
+  show(`<form class="card" id="f"><h1>Pair with ${esc(mac.name)}</h1>
+    <p>Name this device so you can recognise it on your Mac.</p>
+    <label for="nm">Device name</label><input id="nm" value="${esc(deviceName())}" maxlength="40" required>
+    <button class="primary">Pair</button><div class="err" id="err"></div></form>`);
+  $('#f').onsubmit = async (e) => {
+    e.preventDefault();
+    const name = $('#nm').value.trim() || deviceName();
+    const kp = await genKeyPair(false); // private key never leaves this browser
+    const rec = { macId, macPub, priv: kp.privateKey, pub: await exportPub(kp.publicKey), name, added: Date.now() };
+    await putPair(rec);
+    await openMac(mac, { secret, name });
+    pushSub().then((sub) => sub && syncPush(sub)).catch(() => {});
+  };
+}
+
+async function openFromNotification(macId, room) {
+  if (current?.id === macId && session?.chan) { try { $('#app').contentWindow.agentRoomOpen?.(room); } catch {} return; }
+  let me; try { me = await api('me'); } catch { return showSignIn(); }
+  const mac = me.macs.find((m) => m.id === macId);
+  if (!mac) return showMacs();
+  if (current) leaveApp(true);
+  openMac(mac, null, room);
+}
+async function route() {
+  const h = location.hash;
+  const v = /^#(verify|reset)=([0-9a-f]{64})\.([\w-]+)$/.exec(h);
+  if (v) { history.replaceState(null, '', '/'); return v[1] === 'verify' ? verifyFlow(v[2], v[3]) : showReset(v[2], v[3]); }
+  if (h === '#forgot') { history.replaceState(null, '', '/'); return showForgot(); }
+  if (h === '#signup') { history.replaceState(null, '', '/'); return showSignIn(null, true); }
+  const o = /^#open=([\w-]+)(?:\.([\w-]+))?$/.exec(h);
+  if (o) { history.replaceState(null, '', '/'); return openFromNotification(o[1], o[2]); }
+  const m = /^#pair=([\w-]+\.[\w-]+\.[\w-]+)$/.exec(h);
+  if (m) { history.replaceState(null, '', '/'); return pairFlow(m[1]); }
+  const pending = sessionStorage.getItem('ah-pair');
+  if (pending) { sessionStorage.removeItem('ah-pair'); return pairFlow(pending); }
+  showMacs();
+}
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+  navigator.serviceWorker.addEventListener('message', (e) => { if (e.data?.open?.mac) openFromNotification(e.data.open.mac, e.data.open.room); });
+}
+addEventListener('hashchange', () => { if (/^#(pair|verify|reset|open)=|^#(forgot|signup)$/.test(location.hash)) { if (current) leaveApp(true); route(); } });
+route();
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "agentroom",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-20",
+  "observability": { "enabled": true },
+  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true },
+  "containers": [
+    {
+      "class_name": "Hub",
+      "scheduling_policy": "durable_object",
+      "images": { "base": { "dockerfile": "./container/Dockerfile", "build_context": "./container" } }
+    }
+  ],
+  "durable_objects": { "bindings": [{ "name": "HUB", "class_name": "Hub" }] },
+  "exports": { "Hub": { "type": "durable-object", "storage": "sqlite" } }
+}

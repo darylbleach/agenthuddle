@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agent Huddle: one room for all your AI coding agents</title>
+<meta name="description" content="Claude Code, Codex, Grok, Cursor and Antigravity in one chat on your Mac. They hand work to each other, you approve what matters, from your Mac or your phone.">
+<meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#191918" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" href="/icons/favicon-64.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="canonical" href="https://agenthuddle.net/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://agenthuddle.net/">
+<meta property="og:title" content="Agent Huddle: one room for all your AI coding agents">
+<meta property="og:description" content="Claude Code, Codex, Grok, Cursor and Antigravity in one chat on your Mac. You approve what matters, from your Mac or your phone.">
+<meta property="og:image" content="https://agenthuddle.net/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+:root{
+  --bg:#f6f5f2;--panel:#fff;--panel2:#fbfaf8;--text:#1f1e1c;--muted:#6b6862;--line:#e2dfd8;--code:#efede8;
+  --accent:#2f6fde;--accent-ink:#fff;--ok:#15803d;--danger:#c2410c;
+  --claude:#d97757;--codex:#10a37f;--grok:#a855f7;--cursor:#7c7c7c;--agy:#4285f4;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 12px 32px -12px rgba(0,0,0,.18);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#191918;--panel:#212120;--panel2:#1d1d1c;--text:#ecebe8;--muted:#9b988f;--line:#33322f;--code:#2a2a28;
+  --accent:#6ea0ff;--accent-ink:#0d1220;--ok:#4ade80;--danger:#fb923c;--grok:#c084fc;--cursor:#a3a3a3;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 16px 40px -12px rgba(0,0,0,.6);
+}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86em;background:var(--code);padding:1px 6px;border-radius:5px}
+
+/* nav */
+nav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid transparent}
+nav.scrolled{border-bottom-color:var(--line)}
+nav .wrap{display:flex;align-items:center;gap:24px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--text);font-size:16.5px}
+.brand:hover{text-decoration:none}
+.brand img{width:30px;height:30px;border-radius:8px}
+nav .links{display:flex;gap:22px;margin-left:auto;font-size:14.5px}
+nav .links a{color:var(--muted)}
+nav .links a:hover{color:var(--text);text-decoration:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-weight:600;font-size:15px;border-radius:10px;padding:10px 18px;border:1px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer;white-space:nowrap}
+.btn:hover{text-decoration:none;border-color:color-mix(in srgb,var(--text) 25%,var(--line))}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.small{padding:7px 14px;font-size:14px}
+@media (max-width:760px){nav .links{display:none}nav .btn{margin-left:auto}}
+
+/* hero */
+.hero{padding:72px 0 40px;display:grid;grid-template-columns:1fr 1.08fr;gap:56px;align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:4px 12px 4px 6px}
+.eyebrow .dots{display:inline-flex}
+.eyebrow .dots i{width:10px;height:10px;border-radius:50%;border:2px solid var(--panel);margin-left:-4px}
+.eyebrow .dots i:first-child{margin-left:0}
+h1{font-size:clamp(36px,5.2vw,56px);line-height:1.06;letter-spacing:-.025em;margin:18px 0 18px;font-weight:750}
+.lead{font-size:19px;color:var(--muted);margin:0 0 26px;max-width:34em}
+.lead b{color:var(--text);font-weight:600}
+.signup{display:flex;gap:8px;max-width:460px}
+.signup input[type=email]{flex:1;min-width:0;font:inherit;font-size:16px;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.signup input:focus{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);border-color:var(--accent)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.formnote{font-size:13.5px;color:var(--muted);margin-top:10px;min-height:1.4em}
+.formnote.ok{color:var(--ok);font-weight:600}
+.formnote.err{color:var(--danger)}
+.facts{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:22px;font-size:13.5px;color:var(--muted);list-style:none;padding:0}
+.facts li::before{content:"✓";color:var(--ok);font-weight:700;margin-right:6px}
+.launched-only{display:none}
+[data-launched="1"] .launched-only{display:revert}
+[data-launched="1"] .waitlist-only{display:none}
+@media (max-width:900px){.hero{grid-template-columns:1fr;gap:40px;padding-top:44px}}
+@media (max-width:480px){.signup{flex-direction:column}.signup .btn{width:100%}}
+
+/* app mock */
+.stage{position:relative}
+.win{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;font-size:13.5px;line-height:1.5}
+.bar{display:flex;align-items:center;gap:7px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.bar i{width:11px;height:11px;border-radius:50%;background:var(--line)}
+.bar i:nth-child(1){background:#ff5f57}.bar i:nth-child(2){background:#febc2e}.bar i:nth-child(3){background:#28c840}
+.bar span{margin-left:10px;font-weight:600;font-size:13px}
+.bar small{margin-left:auto;color:var(--muted);font-size:12px}
+.thread{padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.m{display:flex;gap:10px}
+.av{width:26px;height:26px;border-radius:7px;flex:none;display:grid;place-items:center;color:#fff;font-weight:700;font-size:12.5px}
+.mb{min-width:0;flex:1}
+.meta{display:flex;align-items:baseline;gap:8px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.meta .who{font-weight:650;font-size:13px}
+.meta .from{white-space:nowrap}
+.meta .from b{color:var(--text);font-weight:600}
+.bub{margin-top:2px}
+.m.user .bub{background:color-mix(in srgb,var(--accent) 10%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));padding:7px 11px;border-radius:10px;display:inline-block}
+.mention{border-radius:5px;padding:0 4px;font-weight:600}
+.aplog{font-size:12px;color:var(--muted);margin-top:5px;display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+.aplog .okk{color:var(--ok);font-weight:650}
+.aplog code{font-size:11.5px}
+.approval{margin-top:6px;border:1px solid color-mix(in srgb,#f59e0b 45%,var(--line));background:color-mix(in srgb,#f59e0b 8%,var(--panel));border-radius:10px;padding:9px 11px}
+.approval .what{font-weight:600;font-size:13px}
+.approval code{display:block;margin:5px 0 8px;padding:5px 8px;font-size:12px}
+.approval .row{display:flex;gap:6px}
+.mini{font:inherit;font-size:12px;font-weight:600;border-radius:7px;padding:4px 12px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+.mini.go{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.mini.no{color:var(--danger)}
+.notif{position:absolute;right:-18px;bottom:-30px;width:300px;background:color-mix(in srgb,var(--panel) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:11px 13px;display:flex;gap:10px;font-size:12.5px;line-height:1.4}
+.notif img{width:34px;height:34px;border-radius:8px;flex:none}
+.notif b{display:flex;justify-content:space-between;font-size:13px}
+.notif b span{font-weight:400;color:var(--muted);font-size:11.5px}
+.notif p{margin:2px 0 0;color:var(--muted)}
+@media (max-width:900px){.notif{right:8px;bottom:-34px;width:min(300px,86%)}}
+
+/* sections */
+section{padding:84px 0}
+.kicker{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+h2{font-size:clamp(28px,3.6vw,38px);line-height:1.15;letter-spacing:-.02em;margin:0 0 14px;font-weight:720}
+.sub{color:var(--muted);font-size:17.5px;max-width:40em;margin:0 0 40px}
+.agents{display:flex;flex-wrap:wrap;gap:10px;margin-top:-10px;margin-bottom:6px}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:6px 14px 6px 10px;font-weight:600;font-size:14.5px}
+.chip i{width:10px;height:10px;border-radius:50%}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 22px 20px}
+.card .ico{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);margin-bottom:14px}
+.card h3{margin:0 0 6px;font-size:17px;letter-spacing:-.01em}
+.card p{margin:0;color:var(--muted);font-size:15px}
+@media (max-width:900px){.grid{grid-template-columns:1fr 1fr}}
+@media (max-width:600px){.grid{grid-template-columns:1fr}section{padding:60px 0}}
+
+/* how it works */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:s;list-style:none;padding:0;margin:0}
+.steps li{counter-increment:s;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
+.steps li::before{content:counter(s);display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--text);color:var(--bg);font-weight:700;font-size:14px;margin-bottom:12px}
+.steps h3{margin:0 0 6px;font-size:16.5px}
+.steps p{margin:0;color:var(--muted);font-size:15px}
+@media (max-width:760px){.steps{grid-template-columns:1fr}}
+
+/* security */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+.checks{list-style:none;padding:0;margin:0;display:grid;gap:14px}
+.checks li{display:flex;gap:12px;align-items:flex-start}
+.checks li svg{flex:none;margin-top:3px;color:var(--ok)}
+.checks b{display:block}
+.checks span{color:var(--muted);font-size:15px}
+.flow{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
+.flow svg{width:100%;height:auto;display:block}
+.flow p{margin:12px 0 0;font-size:13.5px;color:var(--muted)}
+@media (max-width:860px){.split{grid-template-columns:1fr;gap:32px}}
+
+/* pricing */
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
+.plan{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;display:flex;flex-direction:column}
+.plan.best{border:2px solid var(--accent);position:relative}
+.plan .tag{position:absolute;top:-12px;left:24px;background:var(--accent);color:var(--accent-ink);font-size:12px;font-weight:700;border-radius:99px;padding:2px 10px}
+.plan h3{margin:0;font-size:17px}
+.price{font-size:40px;font-weight:750;letter-spacing:-.02em;margin:10px 0 0}
+.price small{font-size:15px;font-weight:500;color:var(--muted);letter-spacing:0}
+.plan .note{color:var(--muted);font-size:14px;margin:4px 0 18px;min-height:2.8em}
+.plan ul{list-style:none;padding:0;margin:0 0 22px;display:grid;gap:7px;font-size:14.5px}
+.plan li::before{content:"✓";color:var(--ok);font-weight:700;margin-right:8px}
+.plan .btn{margin-top:auto}
+.trial{text-align:center;color:var(--muted);font-size:14.5px;margin-top:22px}
+@media (max-width:900px){.plans{grid-template-columns:1fr;max-width:460px}}
+
+/* faq */
+.faq{max-width:780px}
+details{border-bottom:1px solid var(--line);padding:4px 0}
+summary{cursor:pointer;list-style:none;padding:14px 32px 14px 0;font-weight:620;font-size:16.5px;position:relative}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";position:absolute;right:4px;top:10px;font-size:22px;font-weight:400;color:var(--muted);transition:transform .15s}
+details[open] summary::after{transform:rotate(45deg)}
+details p{margin:0 0 16px;color:var(--muted);font-size:15.5px}
+
+/* final cta */
+.cta{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:48px 32px;text-align:center}
+.cta h2{margin-bottom:8px}
+.cta .sub{margin:0 auto 24px}
+.cta .signup{margin:0 auto}
+.cta .formnote{text-align:center}
+
+footer{padding:40px 0 56px;color:var(--muted);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center}
+footer .links{display:flex;gap:20px;margin-left:auto}
+footer a{color:var(--muted)}
+</style>
+</head>
+<body data-launched="__LAUNCHED__">
+
+<nav id="nav"><div class="wrap">
+  <a class="brand" href="/"><img src="/icons/icon-192.png" alt="">Agent Huddle</a>
+  <div class="links"><a href="#features">Features</a><a href="#security">Security</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></div>
+  <a class="btn small primary waitlist-only" href="#join">Join the waitlist</a>
+  <a class="btn small primary launched-only" href="/download">Download</a>
+</div></nav>
+
+<main>
+<div class="wrap hero">
+  <div>
+    <span class="eyebrow"><span class="dots"><i style="background:var(--claude)"></i><i style="background:var(--codex)"></i><i style="background:var(--grok)"></i><i style="background:var(--agy)"></i></span>For Mac · <span class="waitlist-only">launching soon</span><span class="launched-only">5-day free trial</span></span>
+    <h1>One room for all your AI coding agents.</h1>
+    <p class="lead"><b>Claude Code, Codex, Grok, Cursor and Antigravity</b> in one chat on your Mac. They hand work to each other, and you approve what matters, from your Mac or your phone.</p>
+    <form class="signup waitlist-only" data-waitlist>
+      <input type="email" name="email" placeholder="you@example.com" autocomplete="email" required aria-label="Email address">
+      <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button class="btn primary" type="submit">Join the waitlist</button>
+    </form>
+    <div class="formnote waitlist-only" role="status">Be first in line, with the founding price at launch.</div>
+    <div class="launched-only"><a class="btn primary" href="/download">Download for Mac</a> <a class="btn" href="#pricing">See pricing</a></div>
+    <ul class="facts">
+      <li>Uses the plans you already pay for</li>
+      <li>Runs on your Mac, encrypted</li>
+      <li>macOS 12 or later</li>
+    </ul>
+  </div>
+
+  <div class="stage" aria-label="Agent Huddle showing Claude handing work to Codex, with an approval request">
+    <div class="win">
+      <div class="bar"><i></i><i></i><i></i><span># login-hardening</span><small>Ask in chat</small></div>
+      <div class="thread">
+        <div class="m user"><div class="av" style="background:#6b6862">D</div><div class="mb">
+          <div class="meta"><span class="who">Daryl</span><span>10:42</span></div>
+          <div class="bub"><span class="mention" style="color:var(--claude);background:color-mix(in srgb,var(--claude) 14%,transparent)">@claude</span> add rate limiting to the login route, then ask <span class="mention" style="color:var(--codex);background:color-mix(in srgb,var(--codex) 14%,transparent)">@codex</span> to review it</div>
+        </div></div>
+        <div class="m"><div class="av" style="background:var(--claude)">C</div><div class="mb">
+          <div class="meta"><span class="who" style="color:var(--claude)">Claude</span><span class="from">← <b>Daryl</b></span><span>10:44 · 1m 52s</span></div>
+          <div class="bub">Added a limiter to <code>src/auth.ts</code>: 5 attempts per 15 minutes per IP, with a clear error message. <span class="mention" style="color:var(--codex);background:color-mix(in srgb,var(--codex) 14%,transparent)">@codex</span> can you review it and run the tests?</div>
+          <div class="aplog"><span class="okk">✓ Allowed</span> change files <code>src/auth.ts</code></div>
+        </div></div>
+        <div class="m"><div class="av" style="background:var(--codex)">C</div><div class="mb">
+          <div class="meta"><span class="who" style="color:var(--codex)">Codex</span><span class="from">← <b>Claude</b> · hand-off</span><span>10:45</span></div>
+          <div class="approval"><div class="what">Codex wants to run a command</div><code>npm test -- auth</code>
+            <div class="row"><span class="mini go">Approve</span><span class="mini no">Deny</span></div></div>
+        </div></div>
+      </div>
+    </div>
+    <div class="notif" aria-hidden="true"><img src="/icons/icon-192.png" alt=""><div><b>Codex needs your approval <span>now</span></b><p>Wants to run a command: npm test -- auth</p></div></div>
+  </div>
+</div>
+
+<section id="features"><div class="wrap">
+  <p class="kicker">Features</p>
+  <h2>Your agents, working together. You, in charge.</h2>
+  <p class="sub">Stop copying answers between tabs. Put every agent in the same room, let them build on each other's work, and keep a clear record of who did what.</p>
+  <div class="agents">
+    <span class="chip"><i style="background:var(--claude)"></i>Claude Code</span>
+    <span class="chip"><i style="background:var(--codex)"></i>Codex</span>
+    <span class="chip"><i style="background:var(--grok)"></i>Grok</span>
+    <span class="chip"><i style="background:var(--cursor)"></i>Cursor</span>
+    <span class="chip"><i style="background:var(--agy)"></i>Antigravity</span>
+  </div>
+  <div class="grid" style="margin-top:28px">
+    <div class="card"><div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <h3>Hand-offs between agents</h3><p>@mention an agent and it answers in context. Agents can @mention each other too, so Claude can build and Codex can review. Or ask everyone for a round-table.</p></div>
+    <div class="card"><div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <h3>Approve in the chat</h3><p>Before an agent runs a command or changes a file, you get Approve and Deny right in the conversation. Or set a room to auto-approve, or read-only.</p></div>
+    <div class="card"><div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h12"/></svg></div>
+      <h3>See who said what</h3><p>Every reply shows who asked for it, you or another agent, and every approval you gave or refused sits on the message. Check the thread later and it all adds up.</p></div>
+    <div class="card"><div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+      <h3>Rules per room, or everywhere</h3><p>Set rules every agent must follow, in one room or in all of them. Aim a rule at a single agent: “Codex never edits tests.”</p></div>
+    <div class="card"><div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></div>
+      <h3>From your phone</h3><p>Pair your phone with a QR code and pick up any room on the go. Get a notification when an agent needs your approval, and approve it there.</p></div>
+    <div class="card"><div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.85"/></svg></div>
+      <h3>Several accounts per agent</h3><p>Got a work and a personal Claude plan? Add both as separate agents, each with its own usage, and see how close every plan is to its limit.</p></div>
+  </div>
+</div></section>
+
+<section style="padding-top:0"><div class="wrap">
+  <p class="kicker">How it works</p>
+  <h2>Set up in minutes, with the plans you already have.</h2>
+  <p class="sub">No API keys, no extra AI bill. Agent Huddle runs the official command-line tools, signed in to your own accounts.</p>
+  <ol class="steps">
+    <li><h3>Install and sign in</h3><p>Install the agents you use from inside the app, and sign in to each one with your existing Claude, ChatGPT, Grok, Cursor or Google account.</p></li>
+    <li><h3>Open a room</h3><p>Make a room for a project and connect its GitHub repo if you like. Choose whether agents ask first, act freely, or only read.</p></li>
+    <li><h3>Huddle</h3><p>@mention an agent, or ask everyone. Approve what matters, from your Mac or your phone, and come back to a thread that makes sense.</p></li>
+  </ol>
+</div></section>
+
+<section id="security" style="padding-top:0"><div class="wrap split">
+  <div>
+    <p class="kicker">Security &amp; privacy</p>
+    <h2>Your code and chats stay on your Mac.</h2>
+    <p class="sub" style="margin-bottom:28px">Agent Huddle isn't a cloud service that reads your work. It's an app on your Mac, built to keep agents on a short leash.</p>
+    <ul class="checks">
+      <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><b>Encrypted on disk</b><span>Messages, images, settings and tokens live in an encrypted database. The key is kept in your Mac's Keychain.</span></div></li>
+      <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><b>Agents are contained</b><span>Each agent runs in a macOS sandbox. It can only write to its room's folder, and it can't read your SSH or cloud keys.</span></div></li>
+      <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><b>End-to-end encrypted phone access</b><span>Your phone and Mac share keys from a QR code. Our relay only passes on encrypted data it can't read, and that includes notifications.</span></div></li>
+      <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><b>Nothing in between</b><span>Your agents talk straight to their providers, under your own accounts. We never see your prompts, code or replies.</span></div></li>
+    </ul>
+  </div>
+  <div class="flow" aria-label="Diagram: your phone connects through the relay to your Mac, which runs the agents">
+    <svg viewBox="0 0 440 300" role="img" aria-label="Phone to relay to Mac to AI providers">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+      <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="13" fill="currentColor" style="color:var(--text)">
+        <rect x="10" y="40" width="110" height="64" rx="12" fill="var(--panel2)" stroke="var(--line)"/>
+        <text x="65" y="68" text-anchor="middle" font-weight="650">Your phone</text>
+        <text x="65" y="87" text-anchor="middle" font-size="11.5" fill="var(--muted)">paired by QR</text>
+        <rect x="165" y="40" width="110" height="64" rx="12" fill="var(--panel2)" stroke="var(--line)" stroke-dasharray="4 3"/>
+        <text x="220" y="68" text-anchor="middle" font-weight="650">Relay</text>
+        <text x="220" y="87" text-anchor="middle" font-size="11.5" fill="var(--muted)">can't read it</text>
+        <rect x="320" y="40" width="110" height="64" rx="12" fill="color-mix(in srgb,var(--accent) 10%,var(--panel))" stroke="var(--accent)"/>
+        <text x="375" y="68" text-anchor="middle" font-weight="650">Your Mac</text>
+        <text x="375" y="87" text-anchor="middle" font-size="11.5" fill="var(--muted)">encrypted, sandboxed</text>
+        <g stroke="var(--muted)" stroke-width="1.6" fill="none" style="color:var(--muted)">
+          <line x1="122" y1="72" x2="161" y2="72" marker-end="url(#ar)"/>
+          <line x1="277" y1="72" x2="316" y2="72" marker-end="url(#ar)"/>
+          <line x1="375" y1="106" x2="375" y2="166" marker-end="url(#ar)"/>
+        </g>
+        <path d="M66 122 h309" stroke="var(--ok)" stroke-width="2" fill="none"/>
+        <path d="M66 116 v12 M375 116 v12" stroke="var(--ok)" stroke-width="2"/>
+        <text x="220" y="143" text-anchor="middle" font-size="12" fill="var(--ok)" font-weight="650">end-to-end encrypted</text>
+        <rect x="270" y="170" width="160" height="110" rx="12" fill="var(--panel2)" stroke="var(--line)"/>
+        <text x="350" y="194" text-anchor="middle" font-weight="650">Your AI accounts</text>
+        <circle cx="300" cy="222" r="5" fill="var(--claude)"/><text x="312" y="226" font-size="12">Claude</text>
+        <circle cx="362" cy="222" r="5" fill="var(--codex)"/><text x="374" y="226" font-size="12">OpenAI</text>
+        <circle cx="300" cy="250" r="5" fill="var(--grok)"/><text x="312" y="254" font-size="12">xAI</text>
+        <circle cx="362" cy="250" r="5" fill="var(--agy)"/><text x="374" y="254" font-size="12">Google</text>
+        <text x="10" y="200" font-size="12.5" fill="var(--muted)">Agents talk straight to</text>
+        <text x="10" y="218" font-size="12.5" fill="var(--muted)">their providers, signed in</text>
+        <text x="10" y="236" font-size="12.5" fill="var(--muted)">as you. Nothing passes</text>
+        <text x="10" y="254" font-size="12.5" fill="var(--muted)">through us.</text>
+      </g>
+    </svg>
+    <p>Phone access is optional. Without it, nothing leaves your Mac except what your agents send to their own providers.</p>
+  </div>
+</div></section>
+
+<section id="pricing" style="padding-top:0"><div class="wrap">
+  <p class="kicker">Pricing</p>
+  <h2>Try it free for 5 days.</h2>
+  <p class="sub">Everything included, on up to 3 Macs. When the trial ends your agents pause until you choose a plan, and your chats stay readable either way.</p>
+  <div class="plans">
+    <div class="plan">
+      <h3>Monthly</h3>
+      <div class="price">£8 <small>/ month</small></div>
+      <p class="note">Cancel any time.</p>
+      <ul><li>All agents and rooms</li><li>Phone access and notifications</li><li>Every update</li></ul>
+      <a class="btn launched-only" href="__CHECKOUT__">Choose monthly</a>
+      <a class="btn waitlist-only" href="#join">Join the waitlist</a>
+    </div>
+    <div class="plan best">
+      <span class="tag">2 months free</span>
+      <h3>Yearly</h3>
+      <div class="price">£79 <small>/ year</small></div>
+      <p class="note">Works out at £6.58 a month.</p>
+      <ul><li>All agents and rooms</li><li>Phone access and notifications</li><li>Every update</li></ul>
+      <a class="btn primary launched-only" href="__CHECKOUT__">Choose yearly</a>
+      <a class="btn primary waitlist-only" href="#join">Join the waitlist</a>
+    </div>
+    <div class="plan">
+      <h3>Founding lifetime</h3>
+      <div class="price">£99 <small>once</small></div>
+      <p class="note">Launch only, for the first 150 people. Waitlist members hear first.</p>
+      <ul><li>Everything in yearly</li><li>Pay once, keep it for life</li><li>Every future update</li></ul>
+      <a class="btn waitlist-only" href="#join">Get first access</a>
+      <a class="btn launched-only" href="__FOUNDING__">Get lifetime</a>
+    </div>
+  </div>
+  <p class="trial">Prices include VAT where it applies. Payments are handled by Polar, our merchant of record.</p>
+</div></section>
+
+<section id="faq" style="padding-top:0"><div class="wrap faq">
+  <p class="kicker">FAQ</p>
+  <h2>Questions</h2>
+  <details><summary>Do I need API keys or a new AI subscription?</summary><p>No. Agent Huddle runs the official command-line tools (Claude Code, Codex, Grok, Cursor and Antigravity), signed in to the accounts you already have, so usage counts against the plans you already pay for. You can add API keys if you'd rather.</p></details>
+  <details><summary>Which Macs does it run on?</summary><p>Any Mac on macOS 12 Monterey or later. Your agents need the Mac to be awake with Agent Huddle open; it can keep your Mac awake while it's plugged in.</p></details>
+  <details><summary>Can agents do things I didn't agree to?</summary><p>In “Ask in chat” rooms, Claude and Codex ask before running commands or changing files, and you approve or deny in the chat. Read-only rooms can't change anything. Every agent also runs in a macOS sandbox that limits where it can write.</p></details>
+  <details><summary>Can you see my code or conversations?</summary><p>No. They stay on your Mac in an encrypted database, and your agents talk straight to their providers. Phone access is end-to-end encrypted, so our relay can't read it either.</p></details>
+  <details><summary>What happens when the free trial ends?</summary><p>Your agents pause until you choose a plan. You can still open and read every room; nothing is deleted.</p></details>
+  <details><summary>Can I use it on more than one Mac?</summary><p>Yes. A licence works on up to 3 Macs, and you can move it from one Mac to another yourself.</p></details>
+</div></section>
+
+<section id="join" style="padding-top:0"><div class="wrap">
+  <div class="cta">
+    <h2 class="waitlist-only">Be first in the room.</h2>
+    <h2 class="launched-only">Get your agents in one room.</h2>
+    <p class="sub waitlist-only">Join the waitlist for launch news and first access to the founding lifetime price. One email at launch, no spam.</p>
+    <p class="sub launched-only">Download Agent Huddle and try everything free for 5 days.</p>
+    <form class="signup waitlist-only" data-waitlist>
+      <input type="email" name="email" placeholder="you@example.com" autocomplete="email" required aria-label="Email address">
+      <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button class="btn primary" type="submit">Join the waitlist</button>
+    </form>
+    <div class="formnote waitlist-only" role="status"></div>
+    <div class="launched-only"><a class="btn primary" href="/download">Download for Mac</a></div>
+  </div>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 Agent Huddle</span>
+  <a href="mailto:hello@agenthuddle.net">hello@agenthuddle.net</a>
+  <div class="links"><a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="https://app.agenthuddle.net">Phone app</a></div>
+</div></footer>
+
+<script>
+const nav = document.getElementById('nav');
+addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 8), { passive: true });
+for (const f of document.querySelectorAll('[data-waitlist]')) {
+  const note = f.nextElementSibling;
+  f.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = f.querySelector('button'); btn.disabled = true;
+    note.className = 'formnote waitlist-only'; note.textContent = 'Adding you…';
+    try {
+      const r = await fetch('/api/waitlist', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: f.email.value.trim(), company: f.company.value, source: new URLSearchParams(location.search).get('ref') || document.referrer.slice(0, 200) }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'Something went wrong. Try again in a moment.');
+      note.className = 'formnote waitlist-only ok'; note.textContent = 'You’re on the list. Check your inbox for a confirmation.';
+      f.reset();
+    } catch (err) { note.className = 'formnote waitlist-only err'; note.textContent = err.message; }
+    btn.disabled = false;
+  });
+}
+</script>
+</body>
+</html>
